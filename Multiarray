@@ -1,0 +1,294 @@
+#include <iostream>
+#include <cstring>
+#include <string>
+#include <fstream>
+#include <algorithm>
+
+using namespace std;
+
+//make a templete class T
+template<class T>
+
+class Array
+{
+    string name;
+    T *arr;
+    int size;
+public:
+    Array(string name, int size)
+    {
+        this->size = size;
+        this->name = name;
+        arr = new T[size];
+    }
+    //copy constructor
+    Array(const Array& obj)
+    {
+        name = obj.name;
+        size = obj.size;
+        arr = new T[size];
+        for (int i = 0; i < size; i++)
+        {
+            arr[i] = obj.arr[i];
+        }
+    }
+    ~Array()
+    {
+        delete[] arr;
+    }
+};
+
+template<class T>
+
+class MultiArray
+{
+    /*this is an array that will contain th names of
+    multiarrays of one object*/
+    Array<T> **arrays;
+    int noOfArrays;
+public:
+    //defult and parametrized constructor
+    MultiArray()
+    {
+        cout<<"no arrays created"<<endl;
+    }
+    // Copy constructor
+    MultiArray(const MultiArray& obj)
+    {
+        noOfArrays = obj.noOfArrays;
+        arrays = new Array<T>*[noOfArrays];
+        for (int i = 0; i < noOfArrays; i++)
+        {
+            // Use the copy constructor of the Array class
+            arrays[i] = new Array<T>(*obj.arrays[i]);
+        }
+    }
+    /* 
+    * MultiArray - Class constructor
+    * @noOfArrays: name of array whose data will be loaded.
+    * 
+    * Description: The MultiArray constructor initializes 
+    * a MultiArray object by creating an array of Array objects. 
+    * It prompts the user to input the name and number of elements 
+    * for each Array, dynamically allocating memory for each Array object 
+    * in the process. The MultiArray manages multiple Array objects with 
+    * different names and sizes.
+    */
+    MultiArray(int noOfArrays)
+    {
+        string name;
+        int elementsperarray;
+
+        this->noOfArrays = noOfArrays;
+        arrays = new Array<T>*[noOfArrays];
+        for (int i=0; i < noOfArrays; i++)
+        {
+            cout << "Enter the name of Array " << i + 1 << ": ";
+            cin>> name;
+            cout << "How many elements does Array " << i + 1 << " have?: ";
+            cin >> elementsperarray;
+            cout << endl;
+            arrays[i] = new Array<T>(name,elementsperarray);
+        }
+    }
+    /* 
+    * loadFromFile - loads the data of the array of the given name 
+    * from the given file name.
+    * @arrName: name of array whose data will be loaded.
+    * @fileName: name of file data will be loaded from.
+    * 
+    * return: nothing
+    */
+    void loadFromFile(string arrName, string fileName)
+    {
+        ifstream file(fileName);
+        int i = 0;
+        if (file.is_open())
+        {
+            for (i = 0; i < noOfArrays; i++)
+            {
+                if (arrays[i]->name == arrName)
+                {
+                    for (int j = 0; j < arrays[i]->size; j++)
+                    {
+                        file >> arrays[i]->arr[j];
+                    }
+                    break;
+                }
+            }
+            file.close();
+            return;
+        }
+        else
+        {
+            cout << "Unable to open file: " << fileName << endl;
+        }
+        if (i == noOfArrays)
+        {
+            cout << "Not found in file." << endl;
+        }
+    }
+    /* 
+    * subArray - returns a subarray from the start
+    * index to the end index inclusive,if startIndex was greater 
+    * than endIndex the function should correctly return the subArray 
+    * but it should be reversed.
+    * @name: The name of the array from which the subarray is to be extracted.
+    * @startIndex: The starting index of the subarray.
+    * @endIndex: The ending index of the subarray.
+    * @step: The step parameter allows for skipping elements 
+    * in the array,step’s default is 1.
+    * 
+    * return: the new subarray.
+    */
+    T* subArray(string name, int startIndex, int endIndex, int step = 1)
+    {
+        //new array to put the values which will be returned
+        T *tempArr = new T [abs(startIndex - endIndex) + 1];
+        for (int i = 0; i < noOfArrays; i++)
+        {
+            if (arrays[i]->name == name)
+            {
+                for(int j = startIndex; j < endIndex; j+= step)
+                {
+                    tempArr[j] = arrays[i]->arr[j];
+                }
+                for(int j = endIndex; j < startIndex; j-= step)
+                {
+                    tempArr[j] = arrays[i]->arr[j];
+                }
+            }
+        }
+        if (startIndex > endIndex)
+        {
+            return (reverse(tempArr));
+        }
+        return tempArr;
+    }
+    T* reverse(T *arr)
+    {
+        T *arr2;
+        arr2 = new T[arr->size];
+        int i = 0;
+
+        for(int j = arrays[i]->size; j > 0 , i < arrays[i]->size; j--, i++)
+        {
+            arr2[i] = arr[j];
+        }
+        return arr2;
+    }
+    /* 
+    * reverse - reverses the array with the given name.
+    * @name: array name
+    * 
+    * return: nothing
+    */
+    void reverse(string name)
+    {
+        for (int i = 0; i < noOfArrays; i++)
+        {
+            if (arrays[i]->name == name)
+            {
+                reverse(arrays[i]);
+            }
+        }
+    }
+    /* 
+    * sort - sorts the array with the given name.
+    * @name: array name
+    * 
+    * return: nothing
+    */
+    void sort(string name)
+    {
+        for (int i = 0; i < noOfArrays; i++)
+        {
+            if (arrays[i]->name == name)
+            {
+                //using ready sort in STL.
+                sort(arrays[i]->arr, (arrays[i]->arr) + arrays[i]->size);
+            }
+        }
+    }
+    /* 
+    * search - search for an item in any array of 
+    * the MultiArray object.
+    * @item: an item of any type.
+    * 
+    * return: true if it found the item in any array of 
+    * the MultiArray object arrays and false otherwise.
+    */
+    bool search(T item)
+    {
+        for (int i = 0; i < noOfArrays; i++)
+        {
+            for(int j = 0; j < arrays[i]->size; j++)
+            {
+                if(item == arrays[i]->arr[j])
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    /* 
+    * () - operator overloading, to get/set a value of the given array.
+    * @name: array name.
+    * @index: index that will be set or returned(get).
+    * if the function was given a negative index, 
+    * it should return the corresponding value but from 
+    * the end of the array.
+    * 
+    * return: a refrence to an item of any type.
+    */
+    T& operator()(string name, int index)
+    {
+
+    }
+    MultiArray split(string name)
+    {
+
+    }
+    T* merge( )
+    {
+
+    }
+    void applyToArray(string name, void (*func)(T&))
+    {
+
+    }
+    void square(T & x)
+    {
+
+    }
+    friend ostream& operator << (ostream& out, const MultiArray& obj);
+    ~MultiArray()
+    {
+        for (int i = 0; i < noOfArrays; i++) 
+        {
+            delete arrays[i];
+        }
+
+        delete[] arrays;
+    }
+};
+
+template<class T>
+
+ostream& operator << (ostream& out, const MultiArray<T>& obj)
+{
+    for (int i = 0; i < obj.noOfArrays; i++) 
+    {
+        out << "Array " << i + 1 << " (" << obj.arrays[i]->name << "): ";
+        for (int j = 0; j < obj.arrays[i]->size; j++)
+        {
+            out << obj.arrays[i]->arr[j] << " ";
+        }
+        out << endl;
+    }
+    return out;
+}
+int main() 
+{
+}
